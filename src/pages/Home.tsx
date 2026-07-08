@@ -14,7 +14,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
             Ship faster.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
-              Break nothing.
+              Break nothing. QA
             </span>
           </h1>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-10 leading-relaxed">
