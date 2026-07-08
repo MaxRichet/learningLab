@@ -1,0 +1,64 @@
+name: Visual Regression Tests
+
+on:
+  workflow_dispatch:  # déclenchement manuel depuis l'onglet Actions
+
+jobs:
+  vrt:
+    name: Prod vs QA — screenshot comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright + Chromium
+        run: npx playwright install chromium --with-deps
+
+      # Attend que le dernier déploiement Vercel du projet QA soit READY
+      # avant de lancer les comparaisons (max 6 min, vérification toutes les 15s)
+      - name: Wait for QA deployment to be ready
+        env:
+          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "Checking QA deployment status on Vercel..."
+          for i in $(seq 1 24); do
+            STATE=$(curl -sf \
+              "https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=1" \
+              -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              | jq -r '.deployments[0].state')
+            echo "  [attempt $i/24] state = $STATE"
+            if [ "$STATE" = "READY" ]; then
+              echo "✅ QA deployment is ready."
+              exit 0
+            fi
+            if [ "$STATE" = "ERROR" ] || [ "$STATE" = "CANCELED" ]; then
+              echo "❌ Deployment ended with state: $STATE — aborting."
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "❌ Timeout — QA deployment not ready after 6 minutes."
+          exit 1
+
+      - name: Run VRT (Prod vs QA)
+        run: npm run test:vrt
+
+      # Toujours uploader le rapport, même si des tests échouent
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-report-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 30
