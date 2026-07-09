@@ -22,7 +22,7 @@ export default function Home() {
             monitoring, collaboration, and analytics in a single beautiful workspace.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/pricing" className="btn-primary text-base px-8 py-4">
+            <Link to="/pricing" className="btn-primary text-base px-8 py-4 bg-red">
               Start for free
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
